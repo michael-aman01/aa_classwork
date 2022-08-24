@@ -1,98 +1,54 @@
+require_relative "tile.rb"
+require 'colorize'
 
-require_relative "card.rb"
 class Board
-
-  attr_reader :size, :grid
-
-  def initialize
-    @size = self.get_size
-    @grid = Array.new(@size){Array.new(@size)}
-  end
-
-
-  def [](position)
-    @grid[position[0]][position[1]]
-  end
-
-
-
-  def get_size
-    p "Enter an even value for size: "
-    size = gets.chomp.to_i
-    if size%2 != 0
-      raise ArgumentError.new "Enter an even value for size"
-    else
-      return size
+    attr_reader :grid
+    def initialize
+        @grid = self.from_file
     end
-  end
 
+    def []=(pos,new_val)
+        @grid[pos[0]][pos[1]] = Tile.new(new_val)
+    end
 
-  def generate_random_pairs
-    alphabet = (97..122).to_a.map {|letter| letter.chr.upcase}
-    size = @size
-    element_count = size * size
-    pair_count = element_count/2
-    pairs = []
-    i = 0
-    while i < pair_count
-      while true
-        rand_letter = alphabet.sample
-        if pairs.include?(rand_letter) == true
-          next
-        else
-          pairs << rand_letter
-          break
+    def from_file
+        paths = ["./puzzles/sudoku1.txt"]
+        f = File.open(paths[0]).read.split
+        game_board = []
+        (0...f.length).each do |i|
+            row = f[i].chars.map {|elem| elem.to_i} #row in sudoku table
+            tiles = row.map {|elem| Tile.new(elem)}
+            game_board << tiles
         end
-      end
-      i += 1
+        return game_board
     end
-    pairs = pairs * 2
-    used_indices = []
-    i = 0
-    while i < pairs.length
-      while true
-        rand_int = rand(0...pairs.length)
-        if used_indices.include?(rand_int)
-          next
-        else
-          used_indices << rand_int
-          break
-        end
-      end
-      i += 1
-    end
-    random_pairs = used_indices.map {|i| pairs[i]}
-    return random_pairs
-  end
-  
-  def group_pairs
-    pairs = self.generate_random_pairs
-    element_count = pairs.length
-    size = @size #change later
-    j = 0
-    matrix = []
-    while j < element_count
-      i = 0
-      nested = []
-      while i < size
-        nested << pairs[i..-1][j]
-        i += 1
-      end
-      matrix << nested
-      j += size
-    end
-    return matrix
-  end
 
-  def populate
-    matrix = self.group_pairs 
-      (0...@grid.length).each do |idx1|
-        (0...@grid.length).each do |idx2|
-          @grid[idx1][idx2] = Card.new(matrix[idx1][idx2])
+    def render
+        render_table = [] #holds print ready version of grid
+        (0...@grid.length).each do |i|
+            nested = []
+            @grid[i].map do |elem|
+                
+                if elem.value == 0
+                    nested << elem.value
+                else
+                    nested << elem.to_s  
+                end
+            end
+            render_table << nested
         end
-      end
-  end
+        puts "  #{(0...render_table.length).to_a.join("_").colorize(:red)}"
+      
+        (0...render_table.length).each do |j|
+            puts "#{j.to_s.colorize(:red)} #{render_table[j].join("|")}"
+        end
+        return render_table
+    end
+
+
+    
+
 
 end
-
-
+p 
+b = Board.new
